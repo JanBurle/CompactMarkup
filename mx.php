@@ -1,5 +1,6 @@
 <?
-class mxParser
+// Minimal eXtensible markup
+class MxParser
 {
   private $tx;
   function __construct($tx)
@@ -149,7 +150,7 @@ class mxParser
     $arg = $arg ?: '';
 
     // comment
-    if ($tag[0] == '-') return '';
+    if ('-' == $tag[0]) return '';
 
     // special tags
     switch ($tag) {
@@ -157,8 +158,6 @@ class mxParser
         return '<sup>*</sup>';
       case 'br':
         return '<br>';
-      case 'br2':
-        return '<br><br>';
       case 'hr':
         return "<hr$cls>";
       case 'a':
@@ -181,6 +180,9 @@ class mxParser
         return "<th colspan=\"2\"$cls>$tx</th>";
       case 'td2':
         return "<td colspan=\"2\"$cls>$tx</td>";
+        // custom element tags
+      case 'ico':
+        return "<s-ico $tx$cls></s-co>";
     }
 
     // allowed tags
@@ -196,14 +198,13 @@ class mxParser
       'ul' => 'ul',
       'ol' => 'ol',
       'li' => 'li',
-      'row' => 'flex-row',
+      'row' => 'f-row',
       'table' => 'table',
       'tr' => 'tr',
       'th' => 'th',
       'td' => 'td',
       // custom element tags
-      'btn' => 'x-btn',
-      'icon' => 'x-icon',
+      'btn' => 's-btn',
     ];
 
     // allowed tags
@@ -225,12 +226,12 @@ class mxParser
       '@39' => "'",
       // _ -> nbsp
       'nbsp' => '_',
-      // ~ -> non-breaking hyphen
+      // ~ -> non-breakable hyphen
       '#8209' => '~'
     ];
 
     $out = '';
-    while (true) {
+    for (;;) {
       list($head, $tag, $par) = $this->_readTag();
       foreach ($typo as $entity => $rx)
         $head = str_replace($rx, "&{$entity};", $head);
@@ -253,29 +254,44 @@ class mxParser
     $typography = function ($tx) use ($quotes) {
       foreach ($quotes as $e => $q) {
         $i = 0;
-        do {
-          $tx0 = $tx;
-          // replace only one occurence
-          $pos = strpos($tx, $e);
-          if ($pos !== false)
-            $tx = substr_replace($tx, $q[$i], $pos, strlen($e));
+        for (;;) {
+          if (false === ($pos = strpos($tx, $e)))
+            break;
+          $tx = substr_replace($tx, $q[$i], $pos, strlen($e));
           $i = $i ? 0 : 1;
-        } while ($tx0 != $tx);
+        }
       }
       return $tx;
     };
 
-    // TODO revert entities
-    return $typography($this->_parse('', $this->tx));
+    $map = [
+      ['&#34;', '"'],
+      ['&#39;', "'"],
+      ['&#91;', '['],
+      ['&#58;', ':'],
+      ['&#93;', ']'],
+      ['&#40;', '('],
+      ['&#41;', ')'],
+      ['&#95;', '_'],
+      ['&#126;', '~'],
+    ];
+
+    $unent = function ($tx) use ($map) {
+      foreach ($map as [$e, $c])
+        $tx = str_replace($e, $c, $tx);
+      return $tx;
+    };
+
+    return $unent($typography($this->_parse('')));
   }
 }
 
 function mxForJs($tx)
 {
-  return (new mxParser($tx))->forJS();
+  return (new MxParser($tx))->forJS();
 }
 
 function mx($tx)
 {
-  return (new mxParser($tx))->mx();
+  return (new MxParser($tx))->mx();
 }

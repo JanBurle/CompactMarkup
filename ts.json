@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["dom", "esnext"],
+    "declaration": false,
+    "removeComments": true,
+    "outDir": "../dist/cm/"
+  },
+  "include": ["./*.ts", "../../build/types/*.d.ts"]
+}
